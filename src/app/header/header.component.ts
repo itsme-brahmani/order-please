@@ -4,12 +4,12 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { map } from 'rxjs/operators';
 
-import { RecipeModel } from './../recipe/recipe.model';
+
 import { AuthService } from './../authentication/auth.service';
-import { RecipeService } from './../recipe/recipe.service';
 import { OrderService } from '../shared/order-please.service';
 
 import * as fromAppReducer from '../store/app.reducer';
+import * as fromAuthAction from '../authentication/store/auth.actions';
 
 @Component({
   selector: 'app-header',
@@ -53,8 +53,9 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   logout() {
-    this.authSvc.signOut();
+    // this.authSvc.signOut();
     this.isAuthenticated = false;
+    this.store.dispatch(new fromAuthAction.Logout)
   }
 
 

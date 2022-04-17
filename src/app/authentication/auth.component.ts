@@ -4,9 +4,8 @@ import { Observable } from 'rxjs';
 import { AuthService } from './auth.service';
 import { NgForm } from '@angular/forms';
 import { Store } from '@ngrx/store';
-import { Component, OnInit, ViewChild, ViewContainerRef} from '@angular/core';
+import { Component, OnInit, ViewContainerRef} from '@angular/core';
 
-import { AlertComponent } from '../shared/alert/app-alert.component';
 import * as fromApp from '../store/app.reducer';
 import * as fromAuthActions from '../authentication/store/auth.actions';
 
@@ -26,7 +25,6 @@ export class Authentication implements OnInit{
 
   constructor(private authService: AuthService,
               private router: Router,
-              private hostViewContainerRef: ViewContainerRef,
               private store: Store<fromApp.AppState>){}
 
   ngOnInit(): void {
@@ -69,7 +67,8 @@ export class Authentication implements OnInit{
 
     this.isLoading = true;
     if (!this.isLoginMode) {
-     authObs = this.authService.signUp(email, password);
+    //  authObs = this.authService.signUp(email, password);
+    this.store.dispatch(new fromAuthActions.SignupStart({email: email, password: password}))
 
     } else {
       // authObs = this.authService.signIn(email, password);
@@ -91,7 +90,8 @@ export class Authentication implements OnInit{
   }
 
   onCloseErrorMsg() {
-    this.errorMessage = null;
+    // this.errorMessage = null;
+    this.store.dispatch(new fromAuthActions.ClearError());
   }
 
   // errorAlert(msg) {

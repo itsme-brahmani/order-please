@@ -27,119 +27,140 @@ export class AuthService {
       private router: Router,
       private store: Store<fromApp.AppState>){}
 
-  signUp(email: string, password: string) {
-    return this.http.post<AuthInterface>('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key='+environment.firebaseKey, {
-      email: email,
-      password: password,
-      returnSecureToken: true
-    }).pipe(
-      tap(resData => {
-        this.handlingAuthentication(resData.email, resData.localId, resData.idToken, +resData.expiresIn)
-      }),
-      catchError(this.handlingError)
-    )
-  }
+      //while we are implementing these methods in store we are not using this anywhere
+  // signUp(email: string, password: string) {
+  //   return this.http.post<AuthInterface>('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key='+environment.firebaseKey, {
+  //     email: email,
+  //     password: password,
+  //     returnSecureToken: true
+  //   }).pipe(
+  //     tap(resData => {
+  //       this.handlingAuthentication(resData.email, resData.localId, resData.idToken, +resData.expiresIn)
+  //     }),
+  //     catchError(this.handlingError)
+  //   )
+  // }
 
-  signIn(email: string, password: string) {
-    return this.http.post<AuthInterface>('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key='+environment.firebaseKey,{
-      email: email,
-      password: password,
-      returnSecureToken: true
-    }).pipe(
-      tap(resData => {
-        this.handlingAuthentication(resData.email, resData.localId, resData.idToken, +resData.expiresIn)
-      }),
-      catchError(this.handlingError)
-    )
-  }
+  // signIn(email: string, password: string) {
+  //   return this.http.post<AuthInterface>('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key='+environment.firebaseKey,{
+  //     email: email,
+  //     password: password,
+  //     returnSecureToken: true
+  //   }).pipe(
+  //     tap(resData => {
+  //       this.handlingAuthentication(resData.email, resData.localId, resData.idToken, +resData.expiresIn)
+  //     }),
+  //     catchError(this.handlingError)
+  //   )
+  // }
 
-  private handlingError(errorResponse: HttpErrorResponse) {
-    let errorMessage = 'An Unknown error occured!';
-    if(!errorResponse.error || !errorResponse.error.error) {
-      throwError(errorMessage);
-    }
+  // private handlingError(errorResponse: HttpErrorResponse) {
+  //   let errorMessage = 'An Unknown error occured!';
+  //   if(!errorResponse.error || !errorResponse.error.error) {
+  //     throwError(errorMessage);
+  //   }
 
-    switch(errorResponse.error.error.message) {
-      case 'EMAIL_EXISTS':
-        errorMessage = "The email address is already in use by another account."
-        break;
-      case 'EMAIL_NOT_FOUND':
-        errorMessage = 'There is no user record corresponding to this identifier. The user may have been deleted.';
-        break;
-      case 'INVALID_PASSWORD':
-        errorMessage = 'The password is invalid or the user does not have a password.';
-        break;
-      case 'USER_DISABLED':
-        errorMessage = 'The user account has been disabled by an administrator';
-        break;
-    }
+  //   switch(errorResponse.error.error.message) {
+  //     case 'EMAIL_EXISTS':
+  //       errorMessage = "The email address is already in use by another account."
+  //       break;
+  //     case 'EMAIL_NOT_FOUND':
+  //       errorMessage = 'There is no user record corresponding to this identifier. The user may have been deleted.';
+  //       break;
+  //     case 'INVALID_PASSWORD':
+  //       errorMessage = 'The password is invalid or the user does not have a password.';
+  //       break;
+  //     case 'USER_DISABLED':
+  //       errorMessage = 'The user account has been disabled by an administrator';
+  //       break;
+  //   }
 
-    return throwError(errorMessage);
-  }
+  //   return throwError(errorMessage);
+  // }
 
-  private handlingAuthentication(email: string, userId: string, token: string, expiresIn: number) {
-    const expiryDate = new Date(new Date().getTime() + expiresIn * 1000);
-    const user = new UserModel(
-      email,
-      userId,
-      token,
-      expiryDate
-    );
+  // private handlingAuthentication(email: string, userId: string, token: string, expiresIn: number) {
+  //   const expiryDate = new Date(new Date().getTime() + expiresIn * 1000);
+  //   const user = new UserModel(
+  //     email,
+  //     userId,
+  //     token,
+  //     expiryDate
+  //   );
 
-    // this.userAuthSubject.next(user);
-    this.store.dispatch(new fromAuthActions.Login({email: email, userId: userId, token: token, expirationDate: expiryDate}))
+  //   // this.userAuthSubject.next(user);
+  //   this.store.dispatch(new fromAuthActions.AuthenticateSuccess({email: email, userId: userId, token: token, expirationDate: expiryDate}))
 
-    this.autoSignOut(expiresIn * 1000);
-    localStorage.setItem('authUserData', JSON.stringify(user));
+  //   this.autoSignOut(expiresIn * 1000);
+  //   localStorage.setItem('authUserData', JSON.stringify(user));
 
-  }
+  // }
 
   public autoSignIn() {
-    const userData: {email: string, id: string, _token: string, _tokenExpireDate: Date} = JSON.parse(localStorage.getItem('authUserData'));
-    if(!userData) {
-      return;
+    const userData: {
+      email: string;
+      id: string;
+      _token: string;
+      _tokenExpireDate: Date;
+    } = JSON.parse(localStorage.getItem('authUserData'));
+
+    if (!userData) {
+      return {type: 'DUMMY' };
     }
 
-    const loadedUser = new UserModel(userData.email, userData.id, userData._token, new Date(userData._tokenExpireDate));
-
+    const loadedUser = new UserModel(
+      userData.email,
+      userData.id,
+      userData._token,
+      new Date(userData._tokenExpireDate)
+    );
 
     // If the user already have the loaded data with token assigning same data to login automatically
 
     //userModel token is coming as null
     // to-do token value
-    if(loadedUser) {
+    if(loadedUser.token) {
       // instead of sending the loadedUser data to userAuthSubject by ngRx we are dispatching userData
       // this.userAuthSubject.next(loadedUser);
-      this.store.dispatch
-          (new fromAuthActions.Login
+      // this.store.dispatch
+      return new fromAuthActions.AuthenticateSuccess
             ({email: loadedUser.email,
               userId: loadedUser.id,
               token: loadedUser.token,
               expirationDate: new Date(userData._tokenExpireDate)
-          }));
+          });
 
 
-      const expireDuration = new Date(userData._tokenExpireDate).getTime() - new Date().getTime();
-      this.autoSignOut(expireDuration);
+      // const expireDuration =
+      //   new Date(userData._tokenExpireDate).getTime() - new Date().getTime();
+      // this.autoSignOut(expireDuration);
     }
+    return {type: 'DUMMY' };
   }
 
-  public signOut() {
-    // this.userAuthSubject.next(null);
-    this.store.dispatch(new fromAuthActions.Logout());
-    this.router.navigate(['/auth']);
-    localStorage.removeItem('authUserData');
-    if(this.tokenExpirationTimer) {
-      clearTimeout(this.tokenExpirationTimer);
-    }
-    this.tokenExpirationTimer = null;
-  }
+  // public signOut() {
+  //   // this.userAuthSubject.next(null);
+  //   this.store.dispatch(new fromAuthActions.Logout());
+  //   // this.router.navigate(['/auth']);
+  //   localStorage.removeItem('authUserData');
+  //   if(this.tokenExpirationTimer) {
+  //     clearTimeout(this.tokenExpirationTimer);
+  //   }
+  //   this.tokenExpirationTimer = null;
+  // }
 
-  public autoSignOut(expireDuration) {
+  public setLogoutTimer(expireDuration) {
     setTimeout( () => {
-      this.signOut();
+      // this.signOut();
+      this.store.dispatch(new fromAuthActions.Logout());
     },
     expireDuration)
+  }
+
+  clearLogoutTimer() {
+    if(this.tokenExpirationTimer) {
+      clearTimeout(this.tokenExpirationTimer);
+      this.tokenExpirationTimer = null;
+    }
   }
 
 }
